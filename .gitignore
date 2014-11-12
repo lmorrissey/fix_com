@@ -5,3 +5,5 @@
 *.so
 *.mk
 *.settings*
+*.cproject
+*.project
