@@ -1,0 +1,7 @@
+#ignore binaries, object files, libraries
+*.o
+*.exe
+*.a
+*.so
+*.mk
+*.settings*
