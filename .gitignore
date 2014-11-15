@@ -7,3 +7,5 @@
 *.settings*
 *.cproject
 *.project
+*.out
+*.conf

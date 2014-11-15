@@ -1,12 +1,20 @@
-/*
- * fix_spec.h
- *
- *  Created on: Nov 9, 2014
- *      Author: laura
- */
-
 #ifndef FIX_SPEC_H_
 #define FIX_SPEC_H_
+#include <iostream>
+#include <string.h>
+#include <cstring>
+
+/*Note:
+    Due to gcc bug 43453, char arrays can not
+    be initialized in a struct's  initializer list.
+    The struct member will be populated using memcpy instead.
+    For structs containing a char array, the tag number is used as
+    a dummy parameter so we can properly initialize the remaining members.
+    The fix for gcc bug 43453 is in gcc version 4.10.
+    but 4.10 has not been adopted by Linux.
+*/
+
+
 
 /////////////////////////
 //      TAG 8
@@ -15,10 +23,11 @@
 struct FixVersion
 {
     FixVersion() noexcept = default;
-    std::uint8_t e;
+    FixVersion(std::uint16_t tag) : equals('='), tag8(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag8;
     char begin_fix_version[8];
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -28,10 +37,11 @@ struct FixVersion
 struct FixLength
 {
     FixLength() noexcept = default;
-    std::uint8_t e;
+    FixLength( uint16_t blength) : equals('='), tag9(9), body_length(blength), soh(001)  {};
+    char equals;
     std::uint16_t tag9;
     std::uint16_t body_length; // get this from checksum
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -41,10 +51,11 @@ struct FixLength
 struct MsgType
 {
     MsgType() noexcept = default;
-    std::uint8_t e;
+    MsgType(char msg) : equals('='), tag35(35), msg(msg), soh(001)  {};
+    char equals;
     std::uint16_t tag35;
     char msg;
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -54,10 +65,11 @@ struct MsgType
 struct SendTime
 {
     SendTime() noexcept = default;
-    std::uint8_t e;
+    SendTime(std::uint16_t tag) : equals('='), tag52(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag52;
     char time[22]; // UTCTimestamp =YYYYMMDD-HH:MM:SS.sss
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -67,11 +79,11 @@ struct SendTime
 struct TargetCompId
 {
     TargetCompId() noexcept = default;
-    std::uint8_t e;
+    TargetCompId(std::uint16_t tag) : equals('='), tag56(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag56;
     char compid[21];
-    unsigned soh :1;
-//      std::uint8_t soh : 001;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -81,11 +93,11 @@ struct TargetCompId
 struct SenderCompId
 {
     SenderCompId() noexcept = default;
-    std::uint8_t e;
+    SenderCompId(std::uint16_t tag) : equals('='), tag49(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag49;
     char senderid[8];
-    unsigned soh :1;
-//       std::uint8_t soh : 001;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -95,10 +107,11 @@ struct SenderCompId
 struct ClOrderId
 {
     ClOrderId() noexcept = default;
-    std::uint8_t e;
+    ClOrderId(std::uint16_t tag) : equals('='), tag11(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag11;
     char orderid[32];
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -108,10 +121,11 @@ struct ClOrderId
 struct Symbol
 {
     Symbol() noexcept = default;
-    std::uint8_t e;
+    Symbol(std::uint16_t tag) : equals('='), tag55(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag55;
     char symbol[10];
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -121,10 +135,11 @@ struct Symbol
 struct Side
 {
     Side() noexcept = default;
-    std::uint8_t e;
+    Side(char s) : equals('='), tag54(54), side(s),soh(001)  {};
+    char equals;
     std::uint16_t tag54;
     char side;
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -134,10 +149,11 @@ struct Side
 struct TransactTime
 {
     TransactTime() noexcept = default;
-    std::uint8_t e;
+    TransactTime(std::uint16_t tag) : equals('='), tag60(tag), soh(001)  {};
+    char equals;
     std::uint16_t tag60;
     char transact_time[22];
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -147,10 +163,11 @@ struct TransactTime
 struct OrderQty
 {
     OrderQty() noexcept = default;
-    std::uint8_t e;
+    OrderQty(float oqty) : equals('='), tag38(38), orderqty(oqty),soh(001)  {};
+    char equals;
     std::uint16_t tag38;
     float orderqty;
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -160,10 +177,11 @@ struct OrderQty
 struct OrderType
 {
     OrderType() noexcept = default;
-    std::uint8_t e;
+    OrderType(std::uint16_t tag) : equals('='), tag40(tag), soh(001) {};
+    char equals;
     std::uint16_t tag40;
     char ordtype[1];
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -173,10 +191,11 @@ struct OrderType
 struct ExchangeOrderId
 {
     ExchangeOrderId() noexcept = default;
-    std::uint8_t e;
+    ExchangeOrderId(std::uint16_t tag) : equals('='), tag37(tag), soh(001) {};
+    char equals;
     std::uint16_t tag37;
     char orderid[32];
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -186,10 +205,11 @@ struct ExchangeOrderId
 struct ExecId
 {
     ExecId() noexcept = default;
-    std::uint8_t e;
+    ExecId(uint32_t execid ) : equals('='), tag17(17), exec_id(execid), soh(001) {};
+    char equals;
     std::uint16_t tag17;
     uint32_t exec_id;
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -199,10 +219,11 @@ struct ExecId
 struct ExecType
 {
     ExecType() noexcept = default;
-    std::uint8_t e;
+    ExecType(char etype) : equals('='), tag150(150), exec_type(etype), soh(001) {};
+    char equals;
     std::uint16_t tag150;
     char exec_type;
-    unsigned soh :1;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -212,10 +233,39 @@ struct ExecType
 struct OrderStatus
 {
     OrderStatus() noexcept = default;
-    std::uint8_t e;
+    OrderStatus(char ordstatus) : equals('='), tag39(39), ord_status(ordstatus),soh(001) {};
+    char equals;
     std::uint16_t tag39;
     char ord_status;
-    unsigned soh :1;
+    uint8_t soh;
+};
+#pragma pack(pop)
+/////////////////////////
+//      TAG 151
+/////////////////////////
+#pragma pack(push, 1)
+struct LeavesQty
+{
+    LeavesQty() noexcept = default;
+    LeavesQty(float lqty) : equals('='), tag151(151), leavesqty(lqty), soh(001) {};
+    char equals;
+    std::uint16_t tag151;
+    float leavesqty;
+    uint8_t soh;
+};
+#pragma pack(pop)
+/////////////////////////
+//      TAG 14
+/////////////////////////
+#pragma pack(push, 1)
+struct CumQty
+{
+    CumQty() noexcept = default;
+    CumQty(float cqty) : equals('='), tag14(14), cumqty(cqty),soh(001) {};
+    char equals;
+    std::uint16_t tag14;
+    float cumqty;
+    uint8_t soh;
 };
 #pragma pack(pop)
 /////////////////////////
@@ -225,11 +275,13 @@ struct OrderStatus
 struct Checksum
 {
     Checksum() noexcept = default;
-    std::uint8_t e;
+    Checksum(std::uint16_t tag) : equals('='), tag10(tag), soh(001) {};
+    char equals;
     std::uint16_t tag10;
-    char chksum[4];
-    unsigned soh :1;
+    char csum[4];
+    uint8_t soh;
 };
+
 #pragma pack(pop)
 
 #endif /* FIX_SPEC_H_ */

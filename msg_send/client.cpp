@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
+#include <type_traits>
 
 #include "fix_msg.h"
 
@@ -16,7 +17,18 @@ int main(int argc , char **argv)
 {
     static uint16_t port = 7777;
     std::string host = "127.0.0.1";
-    char server_reply[2000];
+//    char server_reply[2000];
+    //send to server
+    FixHeader header_send;
+    NewOrderSingle new_order;
+    OrderCancelRequest ordercancel;
+    Checksum chksum_send;
+
+
+    //receivefrom server
+    FixHeader header_receive;
+    AckOrder serverAck;
+    Checksum chksum_receive;
 
 //    std::time_t t = std::time(nullptr);
 //    std::tm tm = *std::localtime(&t);
@@ -32,46 +44,6 @@ int main(int argc , char **argv)
     }
     int sock_fd;
     struct sockaddr_in server;
-	/////////////////////////////////////
-	//	Initialize msgheader
-	/////////////////////////////////////
-/*	 FixHeader header = { { 075, 8, "FIX.5.2", 1 },     //fix version
-			 { 075, 9, 6, 1 },                          //fix length
-			 { 075, 35, 'D', 1 },                       //order type
-			 { 075, 52, "YYYYMMDD-HH:MM:SS.sss", 1 },   //send time
-			 { 075, 56,"TARGET", 1 },                   //target company
-			 { 075, 49, "BANZAI", 1 } };                //sender
-*/
-/*	 NewOrderSingle neworder =
-	         { { 075, 11, "23487097", 1 },              //order id
-             { 075, 55, "YOKU", 1 },                    //symbol
-             { 075, 54, '1', 1 },                       //side
-             { 075, 60, "YYYYMMDD-HH:MM:SS.sss", 1 },   //transact time
-             { 075, 38, 30, 1 },                      //quantity
-             { 075, 40, '1', 1 } };                //order type  1 = market, 2 limit
-*/
-
-/*	OrderCancelRequest cancelorder =
-	             { { 075, 11, "23487097", 1 },           //order id
-	             { 075, 55, "YOKU", 1 },                 //symbol
-	             { 075, 54, '1', 1 },                    //side
-	             { 075, 60, "YYYYMMDD-HH:MM:SS.sss", 1 },//transact time
-	             { 075, 38, 30.0, 1 } };                   //quantity
-*/
-	// Checksum eom = {075, 10, "0", 1};
-
-	 NewOrder order = { { { 075, 8, "FIX.5.2", 1 },     //fix version
-             { 075, 9, 6, 1 },                          //fix length
-             { 075, 35, 'D', 1 },                       //order type
-             { 075, 52, "YYYYMMDD-HH:MM:SS.sss", 1 },   //send time
-             { 075, 56,"TARGET", 1 },                   //target company
-             { 075, 49, "BANZAI", 1 } },  { { 075, 11, "23487097", 1 },              //order id
-                     { 075, 55, "YOKU", 1 },                    //symbol
-                     { 075, 54, '1', 1 },                       //side
-                     { 075, 60, "YYYYMMDD-HH:MM:SS.sss", 1 },   //transact time
-                     { 075, 38, 30, 1 },                      //quantity
-                     { 075, 40, '1', 1 } }, {075, 10, "ABC", 1}};
-
 
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd == -1)
@@ -89,23 +61,34 @@ int main(int argc , char **argv)
         std::cerr << "Connection to Server failed" << std::endl;
         return 1;
     }
-
     while (1)
     {
-        //Send a header
-        if (send(sock_fd, &order, sizeof(order), 0) < 0)
+        //Send the header
+        if (send(sock_fd, &header_send, sizeof(header_send), 0) < 0)
         {
-            std::cerr << "Could not send header data" << std::endl;
+            std::cerr << "Could not send new order" << std::endl;
             return 1;
         }
-        std::cerr << "Waiting....." << std::endl;
+       //Send new order
+        if (send(sock_fd, &new_order, sizeof(new_order), 0) < 0)
+        {
+            std::cerr << "Could not send new order" << std::endl;
+            return 1;
+        }
+        // Send the checksum
+        if (send(sock_fd, &chksum_send, sizeof(chksum_send), 0) < 0)
+        {
+            std::cerr << "Could not send new order" << std::endl;
+            return 1;
+        }
         //Wait for ack
-        if (recv(sock_fd, server_reply, 2000, 0) < 0)
+        if (recv(sock_fd, &serverAck, sizeof(AckOrder), 0) < 0)
         {
             std::cerr << "No Ack from server" << std::endl;
             break;
         }
-        std::cout<<"Server sent "<<server_reply<<std::endl;
+        std::cout << "Server response" << std::endl;
+        PrintServerAck(serverAck);
         //Send Cancel
         //Wait for ack
     }
