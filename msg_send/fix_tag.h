@@ -3,19 +3,31 @@
 #include <iostream>
 #include <string.h>
 #include <cstring>
+#include <array>
 
-/*Note:
-    Due to gcc bug 43453, char arrays can not
-    be initialized in a struct's  initializer list.
-    The struct member will be populated using memcpy instead.
-    For structs containing a char array, the tag number is used as
-    a dummy parameter so we can properly initialize the remaining members.
-    The fix for gcc bug 43453 is in gcc version 4.10.
-    but 4.10 has not been adopted by Linux.
-*/
+const char* FIX_VERSION = "FIX.5.2";
+const char EQUALS = EQUALS;
+const uint8_t SOH = SOH;
 
+//order state
+const char NEW = '0';
+const char CANCELLED = '4';
+const char PENDING_CANCEL = '6';
 
+//side
+const char BID = '0';
+const char ASK = '1';
 
+//order type
+const char MARKET = '1';
+const char LIMIT = '2';
+
+//message type
+const char NEW_ORDER = 'D';
+const char CANCEL_ORDER = 'F';
+const char ACK_ORDER = '8';
+
+//0=new, 4=cancelled, 6=pending cancel
 /////////////////////////
 //      TAG 8
 /////////////////////////
@@ -23,12 +35,15 @@
 struct FixVersion
 {
     FixVersion() noexcept = default;
-    FixVersion(std::uint16_t tag) : equals('='), tag8(tag), soh(001)  {};
+    FixVersion(const char* fix_version) : equals(EQUALS), tag8(8), soh(SOH)
+    { std::memcpy(begin_fix_version.data(), fix_version, 8); };
     char equals;
     std::uint16_t tag8;
-    char begin_fix_version[8];
+    std::array<char, 8> begin_fix_version;  // array does not have a constructor; we're still a pod.
+//    char begin_fix_version[8];
     uint8_t soh;
 };
+
 #pragma pack(pop)
 /////////////////////////
 //      TAG 9
@@ -37,7 +52,7 @@ struct FixVersion
 struct FixLength
 {
     FixLength() noexcept = default;
-    FixLength( uint16_t blength) : equals('='), tag9(9), body_length(blength), soh(001)  {};
+    FixLength( uint16_t blength) : equals(EQUALS), tag9(9), body_length(blength), soh(SOH)  {};
     char equals;
     std::uint16_t tag9;
     std::uint16_t body_length; // get this from checksum
@@ -51,7 +66,7 @@ struct FixLength
 struct MsgType
 {
     MsgType() noexcept = default;
-    MsgType(char msg) : equals('='), tag35(35), msg(msg), soh(001)  {};
+    MsgType(char msg) : equals(EQUALS), tag35(35), msg(msg), soh(SOH)  {};
     char equals;
     std::uint16_t tag35;
     char msg;
@@ -65,10 +80,11 @@ struct MsgType
 struct SendTime
 {
     SendTime() noexcept = default;
-    SendTime(std::uint16_t tag) : equals('='), tag52(tag), soh(001)  {};
+    SendTime(const char* time) : equals(EQUALS), tag52(52), soh(SOH)
+    {std::memcpy(sendtime.data(), time, 22);};
     char equals;
     std::uint16_t tag52;
-    char time[22]; // UTCTimestamp =YYYYMMDD-HH:MM:SS.sss
+    std::array<char, 22> sendtime; // UTCTimestamp =YYYYMMDD-HH:MM:SS.sss
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -79,10 +95,11 @@ struct SendTime
 struct TargetCompId
 {
     TargetCompId() noexcept = default;
-    TargetCompId(std::uint16_t tag) : equals('='), tag56(tag), soh(001)  {};
+    TargetCompId(const char* id) : equals(EQUALS), tag56(56), soh(SOH)
+    { std::memcpy(compid.data(), id, 21); };
     char equals;
     std::uint16_t tag56;
-    char compid[21];
+    std::array<char, 21> compid;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -93,10 +110,26 @@ struct TargetCompId
 struct SenderCompId
 {
     SenderCompId() noexcept = default;
-    SenderCompId(std::uint16_t tag) : equals('='), tag49(tag), soh(001)  {};
+    SenderCompId(const char* id) : equals(EQUALS), tag49(49), soh(SOH)
+    { std::memcpy(senderid.data(), id, 8); };
     char equals;
     std::uint16_t tag49;
-    char senderid[8];
+    std::array<char, 8> senderid;
+    uint8_t soh;
+};
+#pragma pack(pop)
+/////////////////////////
+//      TAG 34
+/////////////////////////
+#pragma pack(push, 1)
+struct MsgSeqNum
+{
+    MsgSeqNum() noexcept = default;
+    MsgSeqNum(std::uint32_t seq) : equals(EQUALS), tag34(34), msgseq(seq),soh(SOH)
+    {};
+    char equals;
+    std::uint16_t tag34;
+    std::uint32_t msgseq;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -107,10 +140,11 @@ struct SenderCompId
 struct ClOrderId
 {
     ClOrderId() noexcept = default;
-    ClOrderId(std::uint16_t tag) : equals('='), tag11(tag), soh(001)  {};
+    ClOrderId(const char* id) : equals(EQUALS), tag11(11), soh(SOH)
+    { std::memcpy(orderid.data(), id, 32); };
     char equals;
     std::uint16_t tag11;
-    char orderid[32];
+    std::array<char, 32> orderid;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -121,10 +155,11 @@ struct ClOrderId
 struct Symbol
 {
     Symbol() noexcept = default;
-    Symbol(std::uint16_t tag) : equals('='), tag55(tag), soh(001)  {};
+    Symbol(const char* sym) : equals(EQUALS), tag55(55), soh(SOH)
+    { std::memcpy(symbol.data(), sym, 10); };
     char equals;
     std::uint16_t tag55;
-    char symbol[10];
+    std::array<char, 10> symbol;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -135,7 +170,7 @@ struct Symbol
 struct Side
 {
     Side() noexcept = default;
-    Side(char s) : equals('='), tag54(54), side(s),soh(001)  {};
+    Side(char s) : equals(EQUALS), tag54(54), side(s),soh(SOH)  {};
     char equals;
     std::uint16_t tag54;
     char side;
@@ -149,10 +184,11 @@ struct Side
 struct TransactTime
 {
     TransactTime() noexcept = default;
-    TransactTime(std::uint16_t tag) : equals('='), tag60(tag), soh(001)  {};
+    TransactTime(const char* time) : equals(EQUALS), tag60(60), soh(SOH)
+    { std::memcpy(transact_time.data(), time, 22); };
     char equals;
     std::uint16_t tag60;
-    char transact_time[22];
+    std::array<char, 22> transact_time;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -163,7 +199,7 @@ struct TransactTime
 struct OrderQty
 {
     OrderQty() noexcept = default;
-    OrderQty(float oqty) : equals('='), tag38(38), orderqty(oqty),soh(001)  {};
+    OrderQty(float oqty) : equals(EQUALS), tag38(38), orderqty(oqty), soh(SOH) {};
     char equals;
     std::uint16_t tag38;
     float orderqty;
@@ -177,10 +213,11 @@ struct OrderQty
 struct OrderType
 {
     OrderType() noexcept = default;
-    OrderType(std::uint16_t tag) : equals('='), tag40(tag), soh(001) {};
+    OrderType(const char ord) : equals(EQUALS), tag40(40), ordtype(ord), soh(SOH)
+    {};
     char equals;
     std::uint16_t tag40;
-    char ordtype[1];
+    char ordtype;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -191,10 +228,11 @@ struct OrderType
 struct ExchangeOrderId
 {
     ExchangeOrderId() noexcept = default;
-    ExchangeOrderId(std::uint16_t tag) : equals('='), tag37(tag), soh(001) {};
+    ExchangeOrderId(const char* ordid) : equals(EQUALS), tag37(37), soh(SOH)
+    { std::memcpy(orderid.data(), ordid, 32); };
     char equals;
     std::uint16_t tag37;
-    char orderid[32];
+    std::array<char, 32> orderid;
     uint8_t soh;
 };
 #pragma pack(pop)
@@ -205,7 +243,7 @@ struct ExchangeOrderId
 struct ExecId
 {
     ExecId() noexcept = default;
-    ExecId(uint32_t execid ) : equals('='), tag17(17), exec_id(execid), soh(001) {};
+    ExecId(uint32_t execid ) : equals(EQUALS), tag17(17), exec_id(execid), soh(SOH) {};
     char equals;
     std::uint16_t tag17;
     uint32_t exec_id;
@@ -219,7 +257,7 @@ struct ExecId
 struct ExecType
 {
     ExecType() noexcept = default;
-    ExecType(char etype) : equals('='), tag150(150), exec_type(etype), soh(001) {};
+    ExecType(char etype) : equals(EQUALS), tag150(150), exec_type(etype), soh(SOH) {};
     char equals;
     std::uint16_t tag150;
     char exec_type;
@@ -233,7 +271,7 @@ struct ExecType
 struct OrderStatus
 {
     OrderStatus() noexcept = default;
-    OrderStatus(char ordstatus) : equals('='), tag39(39), ord_status(ordstatus),soh(001) {};
+    OrderStatus(char ordstatus) : equals(EQUALS), tag39(39), ord_status(ordstatus),soh(SOH) {};
     char equals;
     std::uint16_t tag39;
     char ord_status;
@@ -247,7 +285,7 @@ struct OrderStatus
 struct LeavesQty
 {
     LeavesQty() noexcept = default;
-    LeavesQty(float lqty) : equals('='), tag151(151), leavesqty(lqty), soh(001) {};
+    LeavesQty(float lqty) : equals(EQUALS), tag151(151), leavesqty(lqty), soh(SOH) {};
     char equals;
     std::uint16_t tag151;
     float leavesqty;
@@ -261,7 +299,7 @@ struct LeavesQty
 struct CumQty
 {
     CumQty() noexcept = default;
-    CumQty(float cqty) : equals('='), tag14(14), cumqty(cqty),soh(001) {};
+    CumQty(float cqty) : equals(EQUALS), tag14(14), cumqty(cqty),soh(SOH) {};
     char equals;
     std::uint16_t tag14;
     float cumqty;
@@ -275,10 +313,11 @@ struct CumQty
 struct Checksum
 {
     Checksum() noexcept = default;
-    Checksum(std::uint16_t tag) : equals('='), tag10(tag), soh(001) {};
+    Checksum(const char* sum) : equals(EQUALS), tag10(10), soh(SOH)
+    { std::memcpy(csum.data(), sum, 4); };
     char equals;
     std::uint16_t tag10;
-    char csum[4];
+    std::array<char, 4> csum;
     uint8_t soh;
 };
 

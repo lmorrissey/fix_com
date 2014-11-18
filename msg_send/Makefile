@@ -1,8 +1,8 @@
 
 empty =
 
+#CXX = clang++
 CXX = g++
-
 CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -Ic:/cygwin64/usr/include
 
 DEPENDSFLAGS = -MM -MF

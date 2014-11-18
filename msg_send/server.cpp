@@ -15,17 +15,11 @@ int main(int argc, char **argv)
     uint16_t port = 7777;
     int socket_desc, client_sock, c, read_size;
     struct sockaddr_in server, client;
-    FixHeader header;
     NewOrderSingle neworder;
     OrderCancelRequest ordercancel;
-    ExecReport execReport();
-    AckOrder ackOrder;
-    Checksum chksum;
-
-    std::strncpy(chksum.csum, "023", sizeof(chksum.csum));
 
     std::cout << std::boolalpha;
-    std::cout << std::is_pod<ExecReport>::value << '\n';
+    std::cout << std::is_pod<ExecReportAck>::value << '\n';
 
 
     if (argc > 1)
@@ -73,31 +67,33 @@ int main(int argc, char **argv)
     //Read until the connection is closed
     while (1)
     {
-        if ((read_size = recv(client_sock, &header, sizeof(FixHeader), 0))> 0)
+        if ((read_size = recv(client_sock, &neworder, sizeof(NewOrderSingle), 0))> 0)
         {
-//            uint16_t chksum = header.length.body_length;
-            switch(header.message.msg)
-            {
-                case 'D':
-                    recv(client_sock, &neworder, sizeof(NewOrderSingle), 0);
-                    //set up ack for new order
-                case 'F':
-                    recv(client_sock, &ordercancel, sizeof(OrderCancelRequest), 0);
-                    //set up ack for cancel order
-
-
-            }
-            if (chksum.csum != 0)
-            {
-                std::cerr<<"checksum "<<chksum.csum<<std::endl;
-                memset(&neworder, sizeof(SendOrderMsg), 0);
-            }
+            ExecReportAck execReport(FixLength(23), SendTime("YYYYMMDD-HH:MM:SS.sss"),
+                                    MsgSeqNum(1), ExchangeOrderId("exchangeneworderid"),
+                                    ExecType('0'), OrderStatus('0'), Checksum("123"));
+            std::cout<<"SERVER RECEIVES: "<<std::endl;
+            PrintNewOrder(neworder);
+            std::cout<<"Server sends new order ack"<< std::endl;
+            send(client_sock, &execReport, sizeof(ExecReportAck), 0);
+            memset(&execReport, sizeof(ExecReportAck), 0);
         }
 
-        std::cerr<<"Got EOM"<<std::endl;
-        if (send(client_sock, &ackOrder, sizeof(AckOrder), 0) <0)
-            std::cerr<<"Could not send ack"<<std::endl;
-
+        if ((read_size = recv(client_sock, &ordercancel, sizeof(OrderCancelRequest), 0))> 0)
+        {
+            ExecReportAck execReport(FixLength(23), SendTime("YYYYMMDD-HH:MM:SS.sss"),
+                                    MsgSeqNum(2),ExchangeOrderId("exchangecancelorderid"),
+                                    ExecType('4'), OrderStatus('6'), Checksum("123"));
+            std::cout<<"SERVER RECEIVES: "<<std::endl;
+            PrintCancelOrder(ordercancel);
+            std::cout<<"Server sends pending cancel ack"<< std::endl;
+            send(client_sock, &execReport, sizeof(ExecReportAck), 0);
+            execReport.msgseq.msgseq=3;
+            execReport.ordStatus.ord_status='4';
+            std::cout<<"Server sends canceled ack"<< std::endl;
+            send(client_sock, &execReport, sizeof(ExecReportAck), 0);
+            memset(&execReport, sizeof(ExecReportAck), 0);
+        }
     }
     if (read_size == 0)
         std::cout << "Client has disconnected" << std::endl;
@@ -108,15 +104,4 @@ int main(int argc, char **argv)
 //    PrintFixHeader(neworder.header);
 
     return 0;
-}
-
-
-
-void CreateExecReport()
-{
-
-
-
-
-
 }

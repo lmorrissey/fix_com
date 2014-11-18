@@ -5,23 +5,6 @@
 #include <iostream>
 #include <cstdint>
 
-//////////////////////////////////
-//          HEADER
-/////////////////////////////////
-#pragma pack(push, 1)
-struct FixHeader
-{
-    FixHeader() noexcept = default;
-    FixHeader(FixVersion v, FixLength l, MsgType m,SendTime t, TargetCompId tgt, SenderCompId sndr)
-             : version(v), length(l), message(m), time(t), target(tgt), sender(sndr) {};
-    FixVersion version;
-    FixLength length;
-    MsgType message;
-    SendTime time;
-    TargetCompId target;
-    SenderCompId sender;
-};
-#pragma pack(pop)
 ////////////////////////////////////////////////
 ///           NEW ORDER
 ////////////////////////////////////////////////
@@ -29,16 +12,39 @@ struct FixHeader
 struct NewOrderSingle
 {
     NewOrderSingle() noexcept = default;
-    NewOrderSingle(ClOrderId oid, Symbol sym,
-    Side s, TransactTime t, OrderQty oqty, OrderType otype )
-    : orderId(oid), symbolId(sym), side(s),
-      time(t), ordqty(oqty), ordtype(otype){};
+    NewOrderSingle(FixLength l,
+                   SendTime stime,
+                   MsgSeqNum seq,
+                   TransactTime t,
+                   Checksum eom )
+                  : version("FIX.5.2"),
+                    length(l),
+                    message(NEW_ORDER),
+                    sendtime(stime),
+                    target("TARGET"),
+                    sender("BANZAI"),
+                    msgseq(seq),
+                    orderId("123NewOrderId"),
+                    symbolId("YOKU"),
+                    side(BID),
+                    transtime(t),
+                    ordqty(30),
+                    ordtype(LIMIT),
+                    chksum(eom) {};
+    FixVersion version;
+    FixLength length;
+    MsgType message;
+    SendTime sendtime;
+    TargetCompId target;
+    SenderCompId sender;
+    MsgSeqNum msgseq;
     ClOrderId orderId;
     Symbol symbolId;
     Side side;
-    TransactTime time;
+    TransactTime transtime;
     OrderQty ordqty;
     OrderType ordtype;
+    Checksum chksum;
 };
 #pragma pack(pop)
 ////////////////////////////////////////////////
@@ -48,193 +54,160 @@ struct NewOrderSingle
 struct OrderCancelRequest
 {
     OrderCancelRequest() noexcept = default;
-    OrderCancelRequest(ClOrderId oid, Symbol sym,
-            Side s, TransactTime t, OrderQty oqty )
-            : orderId(oid), symbolId(sym), side(s),
-              time(t), ordqty(oqty) {};
-    ClOrderId orderId;
-    Symbol symbolId;
-    Side side;
-    TransactTime time;
-    OrderQty ordqty;
+    OrderCancelRequest(FixLength l,
+                       SendTime stime,
+                       MsgSeqNum seq,
+                       TransactTime t,
+                       Checksum eom )
+                      : version("FIX.5.2"),
+                        length(l),
+                        message(CANCEL_ORDER),
+                        sendtime(stime),
+                        target("TARGET"),
+                        sender("BANZAI"),
+                        msgseq(seq),
+                        orderId("123CancelOrderId"),
+                        symbolId("YOKU"),
+                        side(BID),
+                        transtime(t),
+                        ordqty(30),
+                        chksum(eom){};
+        FixVersion version;
+        FixLength length;
+        MsgType message;
+        SendTime sendtime;
+        TargetCompId target;
+        SenderCompId sender;
+        MsgSeqNum msgseq;
+        ClOrderId orderId;
+        Symbol symbolId;
+        Side side;
+        TransactTime transtime;
+        OrderQty ordqty;
+        Checksum chksum;
 };
 #pragma pack(pop)
 ///////////////////////////////////////////////
 //              EXEC REPORT
 //////////////////////////////////////////////
 #pragma pack(push, 1)
-struct ExecReport
+struct ExecReportAck
 {
-    ExecReport() noexcept = default;
-    ExecReport(ExchangeOrderId oId,
-            ExecId eid, ExecType etype,
-            OrderStatus ostatus,
-            Symbol sym, Side s,
-            LeavesQty lqty,
-            CumQty cqty)
-            : orderId(oId),
-              execId(eid),
+    ExecReportAck() noexcept = default;
+    ExecReportAck(FixLength l,
+              SendTime stime,
+              MsgSeqNum seq,
+              ExchangeOrderId oId,
+              ExecType etype,
+              OrderStatus ostatus,
+              Checksum eom)
+            : version("FIX.5.2"),
+              length(l),
+              message(ACK_ORDER),
+              sendtime(stime),
+              target("TARGET"),
+              sender("BANZAI"),
+              msgseq(seq),
+              orderId(oId),
+              execId(0),
               execType(etype),
               ordStatus(ostatus),
-              symbolId(sym),
-              side(s),
-              leaveqty(lqty),
-              cumqty(cqty) {};
+              symbolId("YOKU"),
+              side(BID),
+              leaveqty(0),
+              cumqty(0),
+              chksum(eom) {};
+    FixVersion version;
+    FixLength length;
+    MsgType message;
+    SendTime sendtime;
+    TargetCompId target;
+    SenderCompId sender;
+    MsgSeqNum msgseq;
     ExchangeOrderId orderId;
     ExecId execId;
     ExecType execType;
-    OrderStatus ordStatus;
+    OrderStatus ordStatus; //0=new, 4=cancelled, 6=pending cancel
     Symbol symbolId;
     Side side;
     LeavesQty leaveqty;
     CumQty cumqty;
-};
-#pragma pack(pop)
-/////////////////////////////////////////////
-//              MESSAGES
-////////////////////////////////////////////
-#pragma pack(push, 1)
-struct SendOrderMsg
-{
-    SendOrderMsg() noexcept = default;
-    SendOrderMsg(FixHeader h,NewOrderSingle n,
-    Checksum e) : header(h), neworder(n), eom(e) {}
-    FixHeader header;
-    NewOrderSingle neworder;
-    Checksum eom;
+    Checksum chksum;
 };
 #pragma pack(pop)
 
-#pragma pack(push, 1)
-struct CancelOrderMsg
-{
-    CancelOrderMsg() noexcept = default;
-    CancelOrderMsg(FixHeader h, OrderCancelRequest c,
-        Checksum e) : header(h), cancel(c), eom(e) {}
-    FixHeader header;
-    OrderCancelRequest cancel;
-    Checksum eom;
-};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-struct AckOrder
-{
-    AckOrder() noexcept = default;
-    AckOrder(FixHeader h, ExecReport r, Checksum e)
-    : header(h), report(r), eom(e) {}
-    FixHeader header;
-    ExecReport report;
-    Checksum eom;
-};
-#pragma pack(pop)
-
-const char EQUALS = '=';
-const uint8_t SOH = 001;
-
-//namespace OrderMsgs
-//{
-////Initialize messages for client send
-//    SendOrderMsg new_order = {
-//        { { EQUALS, 8, "FIX.5.2", SOH },             //fix version
-//        { EQUALS, 9, 6, SOH },                       //fix length
-//        { EQUALS, 35, 'D', 1 },                    //order type
-//        { EQUALS, 52, "YYYYMMDD-HH:MM:SS.sss", SOH },//send time
-//        { EQUALS, 56,"TARGET", SOH },                //target company
-//        { EQUALS, 49, "BANZAI", SOH } },             //sender
-//        { { EQUALS, 11, "23487097", SOH },           //order id
-//        { EQUALS, 55, "YOKU", SOH },                 //symbol
-//        { EQUALS, 54, '1', SOH },                    //side
-//        { EQUALS, 60, "YYYYMMDD-HH:MM:SS.sss", SOH },//transact time
-//        { EQUALS, 38, 30, SOH },                     //quantity
-//        { EQUALS, 40, '1', SOH } },                  //order type
-//        {EQUALS, 10, "ABC", SOH}};                   //checksum
-//
-//
-//    CancelOrderMsg cancel_ord = {
-//         { { EQUALS, 8, "FIX.5.2", SOH },             //fix version
-//         { EQUALS, 9, 6, SOH },                       //fix length
-//         { EQUALS, 35, 'D', 1 },                    //order type
-//         { EQUALS, 52, "YYYYMMDD-HH:MM:SS.sss", SOH },//send time
-//         { EQUALS, 56,"TARGET", SOH },                //target company
-//         { EQUALS, 49, "BANZAI", SOH } },             //sender       end header
-//         { { EQUALS, 11, "23487097", SOH },           //order id
-//         { EQUALS, 55, "YOKU", SOH },                 //symbol
-//         { EQUALS, 54, '1', SOH },                    //side
-//         { EQUALS, 60, "YYYYMMDD-HH:MM:SS.sss", SOH },//transact time
-//         { EQUALS, 38, 30, SOH }},                     //quantity
-//         {EQUALS, 10, "ABC", SOH}};                   //checksum
-//}
-//namespace OrderAck
-//{
-//    AckOrder ackorder = {
-//        { { EQUALS, 8, "FIX.5.2", 1 },               //fix version
-//          { EQUALS, 9, 6, 1 },                       //fix length
-//          { EQUALS, 35, 'D', 1 },                    //order type
-//          { EQUALS, 52, "YYYYMMDD-HH:MM:SS.sss", 1 },//send time
-//          { EQUALS, 56,"TARGET", 1 },                //target company
-//          { EQUALS, 49, "BANZAI", 1 } },             //sender
-//          { { EQUALS, 37, "23487097", 1},            //exchange order id
-//          { EQUALS, 17, 0, 1},                       //exec id, 0 for 150
-//          { EQUALS, 150, '0', 1},                    //0=new, 4=cancelled, 6=pending cancel
-//          { EQUALS, 39, '0', 1},                     //0=new, 4=cancelled, 6=pending cancel
-//          { EQUALS, 55, "YOKU", 1},                  //symbol id
-//          { EQUALS, 54, '1', 1 },                    //side
-//          { EQUALS, 151, '1', 1 },                   //leaves qty
-//          { EQUALS, 14, '1', 1 } },                  // cumulative qty
-//          { EQUALS, 10, "ABC", 1} };                   //checksum}
-//
-//}
 //  DEBUG
 
-void PrintFixHeader(FixHeader rcv_header)
+template<std::size_t N>
+std::string MakeString(std::array<char, N> const& array)
 {
-    std::cout << "fix header tag" << rcv_header.version.tag8 << std::endl;
-    std::cout << "fix version" << rcv_header.version.begin_fix_version
-    << std::endl;
-    std::cout << "fix length tag" << rcv_header.length.tag9 << std::endl;
-    std::cout << "fix length" << rcv_header.length.body_length << std::endl;
-    std::cout << "msg type tag" << rcv_header.message.tag35 << std::endl;
-    std::cout << "msg type msg" << rcv_header.message.msg << std::endl;
-    std::cout << "send time" << rcv_header.time.tag52 << std::endl;
-    std::cout << "send time" << rcv_header.time.time << std::endl;
-    std::cout << "target comp" << rcv_header.target.tag56 << std::endl;
-    std::cout << "target comp" << rcv_header.target.compid << std::endl;
-    std::cout << "sender comp id" << rcv_header.sender.tag49 << std::endl;
-    std::cout << "sender comp id" << rcv_header.sender.senderid << std::endl;
+    const char* str = reinterpret_cast<const char*>(array.data());
+    return std::string( str, str+N );
 }
 
-void PrintServerAck(AckOrder ack)
+void PrintNewOrder(NewOrderSingle neworder)
 {
-    std::cout << "exec id" <<ack.report.execId.exec_id << std::endl;
-    std::cout << "exec type" <<ack.report.execType.exec_type << std::endl;
-    std::cout << "OrderSTatus" <<ack.report.ordStatus.ord_status <<std::endl;
-
+    std::cout<< "NewOrderSingle Header:" <<std::endl;
+    std::cout<< "FixVersion: " << MakeString(neworder.version.begin_fix_version)<<std::endl;
+    std::cout<< "\tFixLength: " << neworder.length.body_length <<std::endl;
+    std::cout<< "\tMsgType: " << neworder.message.msg <<std::endl;
+    std::cout<< "\tSendTime: " << MakeString(neworder.sendtime.sendtime) <<std::endl;
+    std::cout<< "\tTargetCompId: " << MakeString(neworder.target.compid) <<std::endl;
+    std::cout<< "\tSenderCompId: " << MakeString(neworder.sender.senderid) <<std::endl;
+    std::cout<< "\tMsgSeqNum: " << neworder.message.msg <<std::endl;
+    std::cout<< "NewOrderSingle message body:" <<std::endl;
+    std::cout<< "\tClOrderId: " << MakeString(neworder.orderId.orderid) << std::endl;
+    std::cout<< "\tSymbol: " << MakeString(neworder.symbolId.symbol) << std::endl;
+    std::cout<< "\tSide: " << neworder.side.side << std::endl;
+    std::cout<< "\tTransactTime: " << MakeString(neworder.transtime.transact_time)<< std::endl;
+    std::cout<< "\tOrderQty: " << neworder.ordqty.orderqty << std::endl;
+    std::cout<< "\tOrderType: " << neworder.ordtype.ordtype << std::endl;
+    std::cout<< "Trailer:" <<std::endl;
+    std::cout<< "\tChecksum: " <<MakeString(neworder.chksum.csum) << std::endl;
 }
 
+void PrintCancelOrder(OrderCancelRequest cancelorder)
+{
+    std::cout << "Cancel Order Header:" <<std::endl;
+    std::cout<< "FixVersion: " << MakeString(cancelorder.version.begin_fix_version)<<std::endl;
+    std::cout<< "\tFixLength: " << cancelorder.length.body_length <<std::endl;
+    std::cout<< "\tMsgType: " << cancelorder.message.msg <<std::endl;
+    std::cout<< "\tSendTime: " << MakeString(cancelorder.sendtime.sendtime) <<std::endl;
+    std::cout<< "\tTargetCompId: " << MakeString(cancelorder.target.compid) <<std::endl;
+    std::cout<< "\tSenderCompId: " << MakeString(cancelorder.sender.senderid) <<std::endl;
+    std::cout<< "\tMsgSeqNum: " << cancelorder.message.msg <<std::endl;
+    std::cout << "OrderCancelRequest message body:" <<std::endl;
+    std::cout << "\tClOrderId: " << MakeString(cancelorder.orderId.orderid) << std::endl;
+    std::cout << "\tSymbol: " << MakeString(cancelorder.symbolId.symbol) << std::endl;
+    std::cout << "\tSide: " << cancelorder.side.side << std::endl;
+    std::cout << "\tTransactTime: " << MakeString(cancelorder.transtime.transact_time)<< std::endl;
+    std::cout << "\tOrderQty: " << cancelorder.ordqty.orderqty << std::endl;
+    std::cout << "Trailer:" <<std::endl;
+    std::cout << "\tChecksum: " << MakeString(cancelorder.chksum.csum)<< std::endl;
+}
 
+void PrintServerAck(ExecReportAck execreport)
+{
+    std::cout << "Exec Report Header:" <<std::endl;
+    std::cout<< "FixVersion: " << MakeString(execreport.version.begin_fix_version)<<std::endl;
+    std::cout<< "\tFixLength: " << execreport.length.body_length <<std::endl;
+    std::cout<< "\tMsgType: " << execreport.message.msg <<std::endl;
+    std::cout<< "\tSendTime: " << MakeString(execreport.sendtime.sendtime) <<std::endl;
+    std::cout<< "\tTargetCompId: " << MakeString(execreport.target.compid) <<std::endl;
+    std::cout<< "\tSenderCompId: " << MakeString(execreport.sender.senderid) <<std::endl;
+    std::cout<< "\tMsgSeqNum: " << execreport.message.msg <<std::endl;
+    std::cout << "ExecReport message body:" <<std::endl;
+    std::cout << "\tExchangeOrderId: " << MakeString(execreport.orderId.orderid) << std::endl;
+    std::cout << "\tExecId: " << execreport.execId.exec_id << std::endl;
+    std::cout << "\tExecType: " << execreport.execType.exec_type << std::endl;
+    std::cout << "\tOrderStatus: " << execreport.ordStatus.ord_status << std::endl;
+    std::cout << "\tSymbol: " <<  MakeString(execreport.symbolId.symbol) << std::endl;
+    std::cout << "\tSide: " << execreport.side.side << std::endl;
+    std::cout << "\tLeavesQty: " << execreport.leaveqty.leavesqty << std::endl;
+    std::cout << "\tCumQty: " << execreport.cumqty.cumqty << std::endl;
+    std::cout << "Trailer:" <<std::endl;
+    std::cout << "\tChecksum: " <<  MakeString(execreport.chksum.csum) << std::endl;
+}
 
-
-//void PrintNewOrder(SendOrderMsg sendOrder)
-//{
-//    std::cout << "fix header tag" << rcv_header.version.tag8 << std::endl;
-//    std::cout << "fix version" << rcv_header.version.begin_fix_version
-//    << std::endl;
-//    std::cout << "fix length tag" << rcv_header.length.tag9 << std::endl;
-//    std::cout << "fix length" << rcv_header.length.body_length << std::endl;
-//    std::cout << "msg type tag" << rcv_header.message.tag35 << std::endl;
-//    std::cout << "msg type msg" << rcv_header.message.msg << std::endl;
-//    std::cout << "send time" << rcv_header.time.tag52 << std::endl;
-//    std::cout << "send time" << rcv_header.time.time << std::endl;
-//    std::cout << "target comp" << rcv_header.target.tag56 << std::endl;
-//    std::cout << "target comp" << rcv_header.target.compid << std::endl;
-//    std::cout << "sender comp id" << rcv_header.sender.tag49 << std::endl;
-//    std::cout << "sender comp id" << rcv_header.sender.senderid << std::endl;
-//}
-
-//void PrintCancelOrderMsg(CancelOrderMsg cancelMsg)
-//{
-//
-//}
 
 #endif /* FIX_MSG_H_ */
