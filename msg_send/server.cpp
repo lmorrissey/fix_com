@@ -6,21 +6,15 @@
 #include <unistd.h>
 #include <cstring>
 #include "fix_msg.h"
-#include <type_traits>
-
-
 
 int main(int argc, char **argv)
 {
     uint16_t port = 7777;
     int socket_desc, client_sock, c, read_size;
     struct sockaddr_in server, client;
+
     NewOrderSingle neworder;
     OrderCancelRequest ordercancel;
-
-    std::cout << std::boolalpha;
-    std::cout << std::is_pod<ExecReportAck>::value << '\n';
-
 
     if (argc > 1)
     {
@@ -44,7 +38,6 @@ int main(int argc, char **argv)
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(port);
 
-    //Bind
     if (bind(socket_desc, (struct sockaddr *) &server, sizeof(server)) < 0)
     {
         std::cerr << "Failed to bind" << std::endl;
@@ -72,9 +65,10 @@ int main(int argc, char **argv)
             ExecReportAck execReport(FixLength(23), SendTime("YYYYMMDD-HH:MM:SS.sss"),
                                     MsgSeqNum(1), ExchangeOrderId("exchangeneworderid"),
                                     ExecType('0'), OrderStatus('0'), Checksum("123"));
-            std::cout<<"SERVER RECEIVES: "<<std::endl;
+
+            #ifdef DEBUG
             PrintNewOrder(neworder);
-            std::cout<<"Server sends new order ack"<< std::endl;
+            #endif
             send(client_sock, &execReport, sizeof(ExecReportAck), 0);
             memset(&execReport, sizeof(ExecReportAck), 0);
         }
@@ -84,13 +78,12 @@ int main(int argc, char **argv)
             ExecReportAck execReport(FixLength(23), SendTime("YYYYMMDD-HH:MM:SS.sss"),
                                     MsgSeqNum(2),ExchangeOrderId("exchangecancelorderid"),
                                     ExecType('4'), OrderStatus('6'), Checksum("123"));
-            std::cout<<"SERVER RECEIVES: "<<std::endl;
+            #ifdef DEBUG
             PrintCancelOrder(ordercancel);
-            std::cout<<"Server sends pending cancel ack"<< std::endl;
+            #endif
             send(client_sock, &execReport, sizeof(ExecReportAck), 0);
             execReport.msgseq.msgseq=3;
             execReport.ordStatus.ord_status='4';
-            std::cout<<"Server sends canceled ack"<< std::endl;
             send(client_sock, &execReport, sizeof(ExecReportAck), 0);
             memset(&execReport, sizeof(ExecReportAck), 0);
         }
@@ -101,7 +94,5 @@ int main(int argc, char **argv)
     {
         std::cerr << "recv failed" << std::endl;
     }
-//    PrintFixHeader(neworder.header);
-
     return 0;
 }

@@ -136,7 +136,7 @@ struct ExecReportAck
 };
 #pragma pack(pop)
 
-//  DEBUG
+//  #define DEBUG
 
 template<std::size_t N>
 std::string MakeString(std::array<char, N> const& array)
@@ -147,66 +147,69 @@ std::string MakeString(std::array<char, N> const& array)
 
 void PrintNewOrder(NewOrderSingle neworder)
 {
+    std::cout<<"SERVER RECEIVES: "<<std::endl;
     std::cout<< "NewOrderSingle Header:" <<std::endl;
-    std::cout<< "FixVersion: " << MakeString(neworder.version.begin_fix_version)<<std::endl;
-    std::cout<< "\tFixLength: " << neworder.length.body_length <<std::endl;
-    std::cout<< "\tMsgType: " << neworder.message.msg <<std::endl;
-    std::cout<< "\tSendTime: " << MakeString(neworder.sendtime.sendtime) <<std::endl;
-    std::cout<< "\tTargetCompId: " << MakeString(neworder.target.compid) <<std::endl;
-    std::cout<< "\tSenderCompId: " << MakeString(neworder.sender.senderid) <<std::endl;
-    std::cout<< "\tMsgSeqNum: " << neworder.message.msg <<std::endl;
+    std::cout<< "\tFixVersion:\t" << MakeString(neworder.version.begin_fix_version)<<std::endl;
+    std::cout<< "\tFixLength:\t" << neworder.length.body_length <<std::endl;
+    std::cout<< "\tMsgType:\t" << neworder.message.msg <<std::endl;
+    std::cout<< "\tSendTime:\t" << MakeString(neworder.sendtime.sendtime) <<std::endl;
+    std::cout<< "\tTargetCompId:\t" << MakeString(neworder.target.compid) <<std::endl;
+    std::cout<< "\tSenderCompId:\t" << MakeString(neworder.sender.senderid) <<std::endl;
+    std::cout<< "\tMsgSeqNum:\t" << neworder.message.msg <<std::endl;
     std::cout<< "NewOrderSingle message body:" <<std::endl;
-    std::cout<< "\tClOrderId: " << MakeString(neworder.orderId.orderid) << std::endl;
-    std::cout<< "\tSymbol: " << MakeString(neworder.symbolId.symbol) << std::endl;
-    std::cout<< "\tSide: " << neworder.side.side << std::endl;
-    std::cout<< "\tTransactTime: " << MakeString(neworder.transtime.transact_time)<< std::endl;
-    std::cout<< "\tOrderQty: " << neworder.ordqty.orderqty << std::endl;
-    std::cout<< "\tOrderType: " << neworder.ordtype.ordtype << std::endl;
+    std::cout<< "\tClOrderId:\t" << MakeString(neworder.orderId.orderid) << std::endl;
+    std::cout<< "\tSymbol:\t" << MakeString(neworder.symbolId.symbol) << std::endl;
+    std::cout<< "\tSide:\t" << neworder.side.side << std::endl;
+    std::cout<< "\tTransactTime:\t" << MakeString(neworder.transtime.transact_time)<< std::endl;
+    std::cout<< "\tOrderQty:\t" << neworder.ordqty.orderqty << std::endl;
+    std::cout<< "\tOrderType:\t" << neworder.ordtype.ordtype << std::endl;
     std::cout<< "Trailer:" <<std::endl;
-    std::cout<< "\tChecksum: " <<MakeString(neworder.chksum.csum) << std::endl;
+    std::cout<< "\tChecksum:\t" <<MakeString(neworder.chksum.csum) << std::endl;
 }
 
 void PrintCancelOrder(OrderCancelRequest cancelorder)
 {
+    std::cout<<"SERVER RECEIVES: "<<std::endl;
     std::cout << "Cancel Order Header:" <<std::endl;
-    std::cout<< "FixVersion: " << MakeString(cancelorder.version.begin_fix_version)<<std::endl;
-    std::cout<< "\tFixLength: " << cancelorder.length.body_length <<std::endl;
-    std::cout<< "\tMsgType: " << cancelorder.message.msg <<std::endl;
-    std::cout<< "\tSendTime: " << MakeString(cancelorder.sendtime.sendtime) <<std::endl;
-    std::cout<< "\tTargetCompId: " << MakeString(cancelorder.target.compid) <<std::endl;
-    std::cout<< "\tSenderCompId: " << MakeString(cancelorder.sender.senderid) <<std::endl;
-    std::cout<< "\tMsgSeqNum: " << cancelorder.message.msg <<std::endl;
+    std::cout<< "\tFixVersion:\t" << MakeString(cancelorder.version.begin_fix_version)<<std::endl;
+    std::cout<< "\tFixLength:\t" << cancelorder.length.body_length <<std::endl;
+    std::cout<< "\tMsgType:\t" << cancelorder.message.msg <<std::endl;
+    std::cout<< "\tSendTime:\t" << MakeString(cancelorder.sendtime.sendtime) <<std::endl;
+    std::cout<< "\tTargetCompId:\t" << MakeString(cancelorder.target.compid) <<std::endl;
+    std::cout<< "\tSenderCompId:\t" << MakeString(cancelorder.sender.senderid) <<std::endl;
+    std::cout<< "\tMsgSeqNum:\t" << cancelorder.message.msg <<std::endl;
     std::cout << "OrderCancelRequest message body:" <<std::endl;
-    std::cout << "\tClOrderId: " << MakeString(cancelorder.orderId.orderid) << std::endl;
-    std::cout << "\tSymbol: " << MakeString(cancelorder.symbolId.symbol) << std::endl;
-    std::cout << "\tSide: " << cancelorder.side.side << std::endl;
-    std::cout << "\tTransactTime: " << MakeString(cancelorder.transtime.transact_time)<< std::endl;
-    std::cout << "\tOrderQty: " << cancelorder.ordqty.orderqty << std::endl;
+    std::cout << "\tClOrderId:\t" << MakeString(cancelorder.orderId.orderid) << std::endl;
+    std::cout << "\tSymbol:\t" << MakeString(cancelorder.symbolId.symbol) << std::endl;
+    std::cout << "\tSide:\t" << cancelorder.side.side << std::endl;
+    std::cout << "\tTransactTime:\t" << MakeString(cancelorder.transtime.transact_time)<< std::endl;
+    std::cout << "\tOrderQty:\t" << cancelorder.ordqty.orderqty << std::endl;
     std::cout << "Trailer:" <<std::endl;
-    std::cout << "\tChecksum: " << MakeString(cancelorder.chksum.csum)<< std::endl;
+    std::cout << "\tChecksum:\t" << MakeString(cancelorder.chksum.csum)<< std::endl;
 }
 
 void PrintServerAck(ExecReportAck execreport)
 {
+    std::cout<<"CLIENT RECEIVES: "<<std::endl;
     std::cout << "Exec Report Header:" <<std::endl;
-    std::cout<< "FixVersion: " << MakeString(execreport.version.begin_fix_version)<<std::endl;
-    std::cout<< "\tFixLength: " << execreport.length.body_length <<std::endl;
-    std::cout<< "\tMsgType: " << execreport.message.msg <<std::endl;
-    std::cout<< "\tSendTime: " << MakeString(execreport.sendtime.sendtime) <<std::endl;
-    std::cout<< "\tTargetCompId: " << MakeString(execreport.target.compid) <<std::endl;
-    std::cout<< "\tSenderCompId: " << MakeString(execreport.sender.senderid) <<std::endl;
-    std::cout<< "\tMsgSeqNum: " << execreport.message.msg <<std::endl;
+    std::cout<< "\tFixVersion:\t" << MakeString(execreport.version.begin_fix_version)<<std::endl;
+    std::cout<< "\tFixLength:\t" << execreport.length.body_length <<std::endl;
+    std::cout<< "\tMsgType:\t" << execreport.message.msg <<std::endl;
+    std::cout<< "\tSendTime:\t" << MakeString(execreport.sendtime.sendtime) <<std::endl;
+    std::cout<< "\tTargetCompId:\t" << MakeString(execreport.target.compid) <<std::endl;
+    std::cout<< "\tSenderCompId:\t" << MakeString(execreport.sender.senderid) <<std::endl;
+    std::cout<< "\tMsgSeqNum:\t" << execreport.message.msg <<std::endl;
     std::cout << "ExecReport message body:" <<std::endl;
-    std::cout << "\tExchangeOrderId: " << MakeString(execreport.orderId.orderid) << std::endl;
-    std::cout << "\tExecId: " << execreport.execId.exec_id << std::endl;
-    std::cout << "\tExecType: " << execreport.execType.exec_type << std::endl;
-    std::cout << "\tOrderStatus: " << execreport.ordStatus.ord_status << std::endl;
-    std::cout << "\tSymbol: " <<  MakeString(execreport.symbolId.symbol) << std::endl;
-    std::cout << "\tSide: " << execreport.side.side << std::endl;
-    std::cout << "\tLeavesQty: " << execreport.leaveqty.leavesqty << std::endl;
-    std::cout << "\tCumQty: " << execreport.cumqty.cumqty << std::endl;
+    std::cout << "\tExchangeOrderId:\t" << MakeString(execreport.orderId.orderid) << std::endl;
+    std::cout << "\tExecId:\t" << execreport.execId.exec_id << std::endl;
+    std::cout << "\tExecType:\t" << execreport.execType.exec_type << std::endl;
+    std::cout << "\tOrderStatus:\t" << execreport.ordStatus.ord_status << std::endl;
+    std::cout << "\tSymbol:\t" <<  MakeString(execreport.symbolId.symbol) << std::endl;
+    std::cout << "\tSide:\t" << execreport.side.side << std::endl;
+    std::cout << "\tLeavesQty:\t" << execreport.leaveqty.leavesqty << std::endl;
+    std::cout << "\tCumQty:\t" << execreport.cumqty.cumqty << std::endl;
     std::cout << "Trailer:" <<std::endl;
-    std::cout << "\tChecksum: " <<  MakeString(execreport.chksum.csum) << std::endl;
+    std::cout << "\tChecksum: \t" <<  MakeString(execreport.chksum.csum) << std::endl;
 }
 
 

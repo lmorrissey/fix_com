@@ -53,7 +53,6 @@ int main(int argc , char **argv)
         return 1;
     }
     //Populate new order
-
     NewOrderSingle newOrder(FixLength(30), SendTime("YYYYMMDD-HH:MM:SS.sss"),
                         MsgSeqNum(1987123), TransactTime("YYYYMMDD-HH:MM:SS.sss"),
                         Checksum("123"));
@@ -78,21 +77,23 @@ int main(int argc , char **argv)
         }
         if (serverAck.ordStatus.ord_status == NEW)
         {
+            #ifdef DEBUG
+            PrintServerAck(serverAck);
+            #endif
 
-          std::cout << "Server acked new order " << std::endl;
-          std::cout<<"CLIENT RECEIVES: "<<std::endl;
-          PrintServerAck(serverAck);
+            //Send cancel order
           if (send(sock_fd, &orderCancel, sizeof(OrderCancelRequest), 0) < 0)
           {
               std::cerr << "Client could not cancel order" << std::endl;
               return 1;
           }
         }
+        //Wait for ack
         if (serverAck.ordStatus.ord_status == PENDING_CANCEL)
         {
-            std::cout << "Client received pending cancel.. " << std::endl;
-            std::cout<<"CLIENT RECEIVES: "<<std::endl;
+            #ifdef DEBUG
             PrintServerAck(serverAck);
+            #endif
             memset(&serverAck, sizeof(ExecReportAck), 0);
         }
         if (serverAck.ordStatus.ord_status == CANCELLED)
