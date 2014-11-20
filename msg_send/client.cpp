@@ -9,10 +9,12 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
+#include <chrono>
 #include <cstdlib>
 #include <type_traits>
 
 #include "fix_msg.h"
+#include "timer.hpp"
 
 int main(int argc , char **argv)
 {
@@ -20,10 +22,6 @@ int main(int argc , char **argv)
     std::string host = "127.0.0.1";
 
     ExecReportAck serverAck;
-
-//    std::time_t t = std::time(nullptr);
-//    std::tm tm = *std::localtime(&t);
-//    std::cout<<std::put_time(&tm, "%F-%T")<<std::endl; //tag52, SendTime, time YYYYMMDD-HH:MM:SS.sss
 
     if (argc > 1)
     {
@@ -64,16 +62,20 @@ int main(int argc , char **argv)
     while (1)
     {
         //Send new order
-        if (send(sock_fd, &newOrder, sizeof(NewOrderSingle), 0) < 0)
         {
-            std::cerr << "Could not send new order" << std::endl;
-            return 1;
-        }
-        //Wait for ack
-        if (recv(sock_fd, &serverAck, sizeof(ExecReportAck), 0) < 0)
-        {
-            std::cerr << "No Ack from server" << std::endl;
-            break;
+            Timer t;
+
+            if (send(sock_fd, &newOrder, sizeof(NewOrderSingle), 0) < 0)
+            {
+                std::cerr << "Could not send new order" << std::endl;
+                return 1;
+            }
+            //Wait for ack
+            if (recv(sock_fd, &serverAck, sizeof(ExecReportAck), 0) < 0)
+            {
+                std::cerr << "No Ack from server" << std::endl;
+                break;
+            }
         }
         if (serverAck.ordStatus.ord_status == NEW)
         {
@@ -82,19 +84,23 @@ int main(int argc , char **argv)
             #endif
 
             //Send cancel order
-          if (send(sock_fd, &orderCancel, sizeof(OrderCancelRequest), 0) < 0)
-          {
-              std::cerr << "Client could not cancel order" << std::endl;
-              return 1;
-          }
-        }
-        //Wait for ack
-        if (serverAck.ordStatus.ord_status == PENDING_CANCEL)
-        {
-            #ifdef DEBUG
-            PrintServerAck(serverAck);
-            #endif
-            memset(&serverAck, sizeof(ExecReportAck), 0);
+            {
+                Timer t;
+                if (send(sock_fd, &orderCancel, sizeof(OrderCancelRequest), 0) < 0)
+                {
+                    std::cerr << "Client could not cancel order" << std::endl;
+                    return 1;
+                }
+
+                //Wait for ack
+                if (serverAck.ordStatus.ord_status == PENDING_CANCEL)
+                {
+                #ifdef DEBUG
+                    PrintServerAck(serverAck);
+                #endif
+                memset(&serverAck, sizeof(ExecReportAck), 0);
+                }
+            }
         }
         if (serverAck.ordStatus.ord_status == CANCELLED)
         {
